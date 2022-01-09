@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block title %}
+  Профиль пользователя {{ author.get_full_name|default:author.username }}
+{% endblock title %}
+
+{% block content %}
+  <h1>
+    Все посты пользователя {{ author.get_full_name|default:author.username }}
+  </h1>
+  <h3>Всего постов: {{ page_obj.paginator.count }}</h3>
+  <p>Зарегистрирован: {{ author.date_joined|date:"d E Y H:i" }}</p>
+  {% if request.user.is_authenticated and request.user != author %}
+    <div class="my-2">
+      {% if following %}
+        <a
+          class="btn btn-light" role="button"
+          href="{% url 'posts:profile_unfollow' author.username %}" 
+        >
+          Отписаться
+        </a>
+      {% else %}
+        <a
+          class="btn btn-primary" role="button"
+          href="{% url 'posts:profile_follow' author.username %}" 
+        >
+          Подписаться
+        </a>
+      {% endif %}
+    </div>
+  {% endif %}
+  {% include 'includes/paginator.html' %}   
+  {% for post in page_obj %}
+
+    {% include 'posts/includes/post.html' with hide_author=True %}   
+    {% if not forloop.last %}<br>{% endif %}
+  
+  {% empty %}
+    <p>Ноль постов, значит их нет.</p>
+  {% endfor %}
+  {% include 'includes/paginator.html' %}
+
+{% endblock content %}

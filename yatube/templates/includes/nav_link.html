@@ -1,0 +1,7 @@
+<li class="nav-item"> 
+  <a class="
+    nav-link
+    {{ color_style }}
+    {% if request.resolver_match.view_name == link_name %}active{% endif %}"
+    href="{% url link_name %}">{{ link_text }}</a>
+</li>

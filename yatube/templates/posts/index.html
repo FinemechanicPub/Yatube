@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% load cache %}
+{% load i18n %}
+{% block title %}
+  Последние обновления на сайте
+{% endblock title %}
+
+{% block content %}
+  <h1>Последние обновления на сайте</h1>
+  {% include 'posts/includes/switcher.html' %}
+  {% get_current_language as LANG %}
+  {% cache 20 index_page page_obj.number request.user.is_authenticated LANG%}
+    {% include 'includes/paginator.html' %}
+    
+    {% for post in page_obj %}
+
+      {% include 'posts/includes/post.html' %}
+      {% if not forloop.last %}<br>{% endif %}
+    
+    {% empty %}
+      <p>Нет записей</p>
+    {% endfor %}
+    
+    {% include 'includes/paginator.html' %}
+  {% endcache %}
+{% endblock content %}

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}403 - Perimission denied{% endblock %}
+{% block content %}
+  <h1>403 - Perimission denied</h1>
+  <h2>Trespassers W</h2>
+  <p>Доступ к странице {{ path }} запрещен.</p>
+  {% if not request.user.is_authenticated %}
+    <p>
+      Попробуйте <a href="{% url 'users:login' %}">войти</a> в учетную запись.
+    </p>
+  {% endif %}
+  <p>Вернуться к <a href="{% url 'posts:index' %}">началу</a>.</p>
+{% endblock %} 

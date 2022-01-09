@@ -1,0 +1,22 @@
+{# Базовый шаблон формы на основе карточки. Ожидает форму в переменной form. #}
+{% extends "card_base.html" %}
+{% block card_header %}Форма ввода{% endblock card_header %}
+{% block card_body %}
+  {% if form %}
+    {% include "includes/form_errors.html" %}
+    
+    <form method="post" enctype="multipart/form-data"
+      {% if action_url %}action="{% url action_url %}"{% endif %}>
+
+      {% include "includes/form_body.html" %}
+      
+      <div class="col-md-6 offset-md-4">
+        {% block submit %}
+          <button type="submit" class="btn btn-primary">
+            Сохранить
+          </button>
+        {% endblock submit %}
+      </div>
+    </form>  
+  {% endif %}
+{% endblock card_body %}

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Технологии{% endblock %}
+{% block content %}
+<div class="row">
+  <h1>Вот что я умею</h1>  
+  <aside class="col-12 col-md-3">
+    <ul class="list-group list-group-flush">
+      <li class="list-group-item">
+        Python
+      </li>
+      <li class="list-group-item">
+        Django
+      </li>
+    </ul>
+  </aside>  
+  <article class="col-12 col-md-9">
+    <p>
+      Проект использует
+      <a href="https://www.python.org/downloads/release/python-370/">
+        Python 3.7
+      </a>
+      ,
+      <a href="https://docs.djangoproject.com/en/3.2/releases/2.2/">
+        Django 2.2
+      </a>
+      и
+      <a href="https://getbootstrap.com/">
+        Bootstrap 4
+      </a>.
+    </p>
+    <p>
+      Целью проекта является демонстрация применения технологий, представляемых
+      пакетом Django.
+    </p>
+    <p>
+      В проекте использованы:
+      <ul>
+        <li>
+          формы на основе моделей (PostForm) и на основе встроенных форм
+          (CreationForm);
+        </li>
+        <li>
+          представления, переопределенные на основе встроенных
+          представлений (Signup);
+        </li>
+        <li>
+          встроенные представления LoginView, LogoutView, PasswordChangeView,
+          PasswordChangeDoneView, PasswordResetView, PasswordResetDoneView,
+          PasswordResetConfirmView, PasswordResetCompleteView.
+        </li>        
+      </ul>
+    </p>
+    <p>
+      Проект демонстрирует:
+      <ul>
+        <li>управление пользователями и доступом к страницам;</li>
+        <li>применение контекст-процессоров;</li>
+        <li>применение пользовательских фильтров;</li>
+      </ul>
+    </p>
+  </article>
+</div>
+{% endblock %} 

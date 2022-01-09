@@ -1,0 +1,13 @@
+{% extends "card_form.html" %}
+{% block title %}Войти{% endblock %}
+{% block card_header %}Войти на сайт{% endblock card_header %}
+{% block submit %}
+  <button type="submit" class="btn btn-primary">
+    Войти
+  </button>
+
+  <a href="{% url 'users:password_reset' %}" class="btn btn-link">
+    Забыли пароль?
+  </a> 
+{% endblock submit %}
+

@@ -150,3 +150,9 @@ static/
 yatube/posts/static/
 yatube/media/
 
+# Bootstrap
+bootstrap.*
+static/css/
+
+# Media files
+media/
