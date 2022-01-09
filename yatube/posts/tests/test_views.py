@@ -10,7 +10,7 @@ from django.urls import reverse
 
 from ..models import User, Post, Group, Follow
 
-TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
+TEMP_MEDIA_ROOT_FORMS = tempfile.mkdtemp(dir=settings.BASE_DIR)
 URL_WITH_PAGE = '{url}?page={page}'
 POSTS_ON_PAGE_LIMIT = settings.POSTS_PER_PAGE
 POST_NUMBER = int(POSTS_ON_PAGE_LIMIT * 1.5)
@@ -89,7 +89,7 @@ class TestPagination(TestCase):
                 )
 
 
-@override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
+@override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT_FORMS)
 class TestPostData(TestCase):
 
     @classmethod
@@ -116,7 +116,7 @@ class TestPostData(TestCase):
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
-        shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
+        shutil.rmtree(TEMP_MEDIA_ROOT_FORMS, ignore_errors=True)
 
     def setUp(self):
         self.author_client = Client()
