@@ -80,7 +80,6 @@ class TestPagination(TestCase):
             [FOLLOW_URL, self.author_client, 0],
             [FOLLOW_URL, self.follower_client, POSTS_ON_FIRST_PAGE],
             [FOLLOW_LAST_PAGE_URL, self.follower_client, POSTS_ON_LAST_PAGE]
-            
         ]
         for url, client, expected_count in cases:
             with self.subTest(url=url, user=auth.get_user(client)):
@@ -222,6 +221,7 @@ class TestSubscription(TestCase):
             'После отписки в базе данных не должно быть подписок'
         )
 
+
 class TestCache(TestCase):
 
     @classmethod
@@ -234,7 +234,7 @@ class TestCache(TestCase):
         )
 
     def setUp(self):
-        self.client = Client()        
+        self.client = Client()
 
     def test_cache(self):
         cache.clear()
@@ -243,25 +243,28 @@ class TestCache(TestCase):
             self.client.get(INDEX_URL),
             text,
             status_code=200,
-            msg_prefix=
-            'Текст поста должен показываться'
-            'на главной странице до теста кэша'
+            msg_prefix=(
+                'Текст поста должен показываться'
+                'на главной странице до теста кэша'
+            )
         )
         self.post.delete()
         self.assertContains(
             self.client.get(INDEX_URL),
             text,
             status_code=200,
-            msg_prefix=
-            'Текст поста должен показываться'
-            'на главной странице после удаления до сброса кэша'
+            msg_prefix=(
+                'Текст поста должен показываться'
+                'на главной странице после удаления до сброса кэша'
+            )
         )
         cache.clear()
         self.assertNotContains(
             self.client.get(INDEX_URL),
             text,
             status_code=200,
-            msg_prefix=
-            'Текст поста не должен показываться'
-            'на главной странице после удаления после сброса кэша'
+            msg_prefix=(
+                'Текст поста не должен показываться'
+                'на главной странице после удаления после сброса кэша'
+            )
         )
