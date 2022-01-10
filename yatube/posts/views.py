@@ -107,11 +107,11 @@ def profile_follow(request: HttpRequest, username: str):
     author = get_object_or_404(User, username=username)
     if request.user != author:
         Follow.objects.get_or_create(user=request.user, author=author)
-    return redirect(request.META.get('HTTP_REFERER', 'posts:index'))
+    return redirect(request.META.get('HTTP_REFERER', 'posts:follow_index'))
 
 
 @login_required
 def profile_unfollow(request: HttpRequest, username: str):
     author = get_object_or_404(User, username=username)
     Follow.objects.filter(user=request.user, author=author).delete()
-    return redirect(request.META.get('HTTP_REFERER', 'posts:index'))
+    return redirect(request.META.get('HTTP_REFERER', 'posts:follow_index'))
