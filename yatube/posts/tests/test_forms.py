@@ -15,7 +15,7 @@ GROUP_FIRST = {'title': 'Test group 1', 'slug': 'test_group1'}
 GROUP_SECOND = {'title': 'Test group 2', 'slug': 'test_group2'}
 INDEX_URL = reverse('posts:index')
 POST_CREATE_URL = reverse('posts:post_create')
-PROFILE_URL = reverse('posts:profile', kwargs={'username': USERNAME})
+PROFILE_URL = reverse('posts:profile',args=(USERNAME,))
 TEST_IMAGE_1 = (
     b'\x47\x49\x46\x38\x39\x61\x02\x00'
     b'\x01\x00\x80\x00\x00\x00\x00\x00'
