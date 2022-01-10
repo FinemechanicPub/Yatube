@@ -6,6 +6,9 @@ from django.urls import reverse
 
 from ..models import User, Post, Group
 
+OK = HTTPStatus.OK
+FOUND = HTTPStatus.FOUND
+NOT_FOUND = HTTPStatus.NOT_FOUND
 USERNAME_AUTHOR = 'author_user'
 USERNAME_SILENT = 'silent_user'
 GROUP = {'title': 'Test group 1', 'slug': 'test_group1'}
@@ -30,6 +33,11 @@ class URLTests(TestCase):
         super().setUpClass()
         cls.author_user = User.objects.create_user(USERNAME_AUTHOR)
         cls.silent_user = User.objects.create_user(USERNAME_SILENT)
+        cls.guest = Client()
+        cls.author = Client()
+        cls.author.force_login(user=cls.author_user)
+        cls.another = Client()
+        cls.another.force_login(user=cls.silent_user)
         cls.group = Group.objects.create(**GROUP)
         cls.post_with_group = Post.objects.create(
             author=cls.author_user,
@@ -51,51 +59,50 @@ class URLTests(TestCase):
         cls.UNSUBSCRIBE_URL = reverse(
             'posts:profile_unfollow', args=(cls.author_user,)
         )
-
-    def setUp(self):
-        self.guest_client = Client()
-        self.author_client = Client()
-        self.author_client.force_login(user=self.author_user)
-        self.silent_client = Client()
-        self.silent_client.force_login(user=self.silent_user)
+        cls.LOGIN_AND_SUBSCRIBE = f'{LOGIN_PAGE_URL}?next={cls.SUBSCRIBE_URL}'
+        cls.LOGIN_AND_UNSUBSCRIBE = (
+            f'{LOGIN_PAGE_URL}?next={cls.UNSUBSCRIBE_URL}'
+        )
 
     def test_response_code(self):
         """Сервер возвращает правильный код ответа"""
         cases = [
-            [INDEX_URL, self.guest_client, HTTPStatus.OK],
-            [GROUP_URL, self.guest_client, HTTPStatus.OK],
-            [PROFILE_URL, self.guest_client, HTTPStatus.OK],
-            [POST_CREATE_URL, self.guest_client, HTTPStatus.FOUND],
-            [POST_CREATE_URL, self.author_client, HTTPStatus.OK],
-            [self.POST_URL, self.guest_client, HTTPStatus.OK],
-            [self.POST_EDIT_URL, self.guest_client, HTTPStatus.FOUND],
-            [self.POST_EDIT_URL, self.silent_client, HTTPStatus.FOUND],
-            [self.POST_EDIT_URL, self.author_client, HTTPStatus.OK],
-            [NONEXISTENT_PAGE_URL, self.guest_client, HTTPStatus.NOT_FOUND],
-            [NONEXISTENT_GROUP_URL, self.guest_client, HTTPStatus.NOT_FOUND],
-            [NONEXISTENT_USER_URL, self.guest_client, HTTPStatus.NOT_FOUND],
-            [FOLLOW_URL, self.guest_client, HTTPStatus.FOUND],
-            [FOLLOW_URL, self.author_client, HTTPStatus.OK],
-            [self.SUBSCRIBE_URL, self.guest_client, HTTPStatus.FOUND],
-            [self.SUBSCRIBE_URL, self.silent_client, HTTPStatus.FOUND],
-            [self.UNSUBSCRIBE_URL, self.guest_client, HTTPStatus.FOUND],
-            [self.UNSUBSCRIBE_URL, self.silent_client, HTTPStatus.FOUND]
+            [INDEX_URL, self.guest, OK],
+            [GROUP_URL, self.guest, OK],
+            [PROFILE_URL, self.guest, OK],
+            [POST_CREATE_URL, self.guest, FOUND],
+            [POST_CREATE_URL, self.author, OK],
+            [self.POST_URL, self.guest, OK],
+            [self.POST_EDIT_URL, self.guest, FOUND],
+            [self.POST_EDIT_URL, self.another, FOUND],
+            [self.POST_EDIT_URL, self.author, OK],
+            [NONEXISTENT_PAGE_URL, self.guest, NOT_FOUND],
+            [NONEXISTENT_GROUP_URL, self.guest, NOT_FOUND],
+            [NONEXISTENT_USER_URL, self.guest, NOT_FOUND],
+            [FOLLOW_URL, self.guest, FOUND],
+            [FOLLOW_URL, self.author, OK],
+            [self.SUBSCRIBE_URL, self.guest, FOUND],
+            [self.SUBSCRIBE_URL, self.another, FOUND],
+            [self.UNSUBSCRIBE_URL, self.guest, FOUND],
+            [self.UNSUBSCRIBE_URL, self.another, FOUND]
         ]
-        for url, client, expected_status in cases:
+        for url, client, expected in cases:
             with self.subTest(url=url, user=auth.get_user(client).username):
-                self.assertEqual(client.get(url).status_code, expected_status)
+                self.assertEqual(client.get(url).status_code, expected)
 
     def test_redirection(self):
         """Сервер перенаправляет по правильному адресу"""
         cases = [
-            [POST_CREATE_URL, self.guest_client, LOGIN_AND_POST_CREATE_URL],
+            [POST_CREATE_URL, self.guest, LOGIN_AND_POST_CREATE_URL],
             [
                 self.POST_EDIT_URL,
-                self.guest_client,
+                self.guest,
                 self.LOGIN_AND_POST_EDIT_URL
             ],
-            [self.POST_EDIT_URL, self.silent_client, self.POST_URL],
-            [FOLLOW_URL, self.guest_client, LOGIN_AND_FOLLOW_URL]
+            [self.POST_EDIT_URL, self.another, self.POST_URL],
+            [FOLLOW_URL, self.guest, LOGIN_AND_FOLLOW_URL],
+            [self.SUBSCRIBE_URL, self.guest, self.LOGIN_AND_SUBSCRIBE],
+            [self.UNSUBSCRIBE_URL, self.guest, self.LOGIN_AND_UNSUBSCRIBE]
         ]
         for url, client, redirection in cases:
             with self.subTest(url=url, user=auth.get_user(client).username):
@@ -115,4 +122,4 @@ class URLTests(TestCase):
         }
         for url, template in expected_templates.items():
             with self.subTest(url=url):
-                self.assertTemplateUsed(self.author_client.get(url), template)
+                self.assertTemplateUsed(self.author.get(url), template)
