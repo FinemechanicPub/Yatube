@@ -40,10 +40,8 @@ def profile(request: HttpRequest, username: str):
 
 def post_detail(request: HttpRequest, post_id):
     """Представление для одной публикации."""
-    post = get_object_or_404(Post, pk=post_id)
     return render(request, 'posts/post_detail.html', {
-        'post': post,
-        'comments': post.comments.all(),
+        'post': get_object_or_404(Post, pk=post_id),
         'form': CommentForm(request.POST)
     })
 
