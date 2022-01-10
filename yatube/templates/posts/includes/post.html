@@ -9,11 +9,9 @@
         </li>
       {% endif %}
       <li class="list-group-item border-0  bg-transparent px-0">
-        Дата публикации: {{ post.pub_date|date:"d E Y" }}
+        Дата публикации: 
         <a href="{% url 'posts:post_detail' post.pk %}"
-        style="text-decoration: none">
-        &rarr;
-        </a>
+          style="text-decoration: none">{{ post.pub_date|date:"d E Y" }}</a>
       </li>
     </ul>
     {% if user == post.author %}
@@ -38,10 +36,8 @@
   </div>
   {% if not hide_group_link and post.group %}
     <div class="card-footer">
-      все записи группы 
-      <a href="{% url 'posts:group_list' post.group.slug %}">
-        {{ post.group }}
-      </a> 
+      #<a href="{% url 'posts:group_list' post.group.slug %}">{{ post.group }}
+        </a> 
     </div>
   {% endif %}
 </article>
