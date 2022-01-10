@@ -11,7 +11,6 @@ def index(request: HttpRequest):
     """Представление главной страницы."""
     return render(request, 'posts/index.html', {
         'page_obj': get_posts_page(request, Post.objects.all()),
-        'index': True
     })
 
 
@@ -94,9 +93,9 @@ def add_comment(request: HttpRequest, post_id):
 def follow_index(request: HttpRequest):
     return render(request, 'posts/follow.html', {
         'page_obj': get_posts_page(
-            request, Post.objects.filter(author__following__user=request.user)
-        ),
-        'follow': True
+            request,
+            Post.objects.filter(author__following__user=request.user)
+        )
     })
 
 

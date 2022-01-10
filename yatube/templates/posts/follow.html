@@ -6,7 +6,7 @@
 
 {% block content %}
   <h1>Последние публикации избранных авторов</h1>
-  {% include 'posts/includes/switcher.html' %}  
+  {% include 'posts/includes/switcher.html' with follow=True %}  
   {% include 'includes/paginator.html' %}
   
   {% for post in page_obj %}

@@ -7,7 +7,7 @@
 
 {% block content %}
   <h1>Последние обновления на сайте</h1>
-  {% include 'posts/includes/switcher.html' %}
+  {% include 'posts/includes/switcher.html' with index=True%}
   {% get_current_language as LANG %}
   {% cache 20 index_page page_obj.number user.is_authenticated LANG%}
     {% include 'includes/paginator.html' %}
