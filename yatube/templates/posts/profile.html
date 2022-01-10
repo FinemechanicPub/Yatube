@@ -9,6 +9,9 @@
     Все посты пользователя {{ author.get_full_name|default:author.username }}
   </h1>
   <h3>Всего постов: {{ page_obj.paginator.count }}</h3>
+  <h3>Комментариев: {{ author.comments.count }}</h3>
+  <h3>Подписок: {{ author.follower.count }}</h3>
+  <h3>Подпсчиков: {{ author.following.count }}</h3>
   <p>Зарегистрирован: {{ author.date_joined|date:"d E Y H:i" }}</p>
   {% if user.is_authenticated and user != author %}
     <div class="my-2">
