@@ -12,7 +12,7 @@ class CommentInline(admin.StackedInline):
     extra = 0
 
 
-class FollowInline(admin.StackedInline):
+class FollowInline(admin.TabularInline):
     model = Follow
     fk_name = 'user'
     extra = 0

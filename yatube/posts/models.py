@@ -79,7 +79,7 @@ class Comment(models.Model):
     class Meta:
         ordering = ('created',)
         default_related_name = 'comments'
-        verbose_name = 'комментарий'  # accusative
+        verbose_name = 'комментарий'  # nominative
         verbose_name_plural = 'комментарии'
 
     def __str__(self) -> str:
@@ -103,6 +103,7 @@ class Follow(models.Model):
     )
 
     class Meta:
+        verbose_name = 'подписка'  # nominative
         verbose_name_plural = "подписки"
         constraints = [
             models.UniqueConstraint(
@@ -111,4 +112,4 @@ class Follow(models.Model):
         ]
 
     def __str__(self):
-        return f'{self.user.username} is following {self.author.username}'
+        return f'{self.user.username} подписан на {self.author.username}'
