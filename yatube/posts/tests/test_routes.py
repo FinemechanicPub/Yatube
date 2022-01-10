@@ -1,6 +1,8 @@
 from django.test import TestCase
 from django.urls import reverse
 
+from ..urls import app_name
+
 
 class TestPostRouting(TestCase):
 
@@ -22,6 +24,6 @@ class TestPostRouting(TestCase):
             f'/profile/{USERNAME}/unfollow/': ('profile_unfollow', (USERNAME,))
         }
         for url, (name, args) in url_routes.items():
-            route = f'posts:{name}'
+            route = f'{app_name}:{name}'
             with self.subTest(route=route):
                 self.assertEqual(url, reverse(route, args=args))

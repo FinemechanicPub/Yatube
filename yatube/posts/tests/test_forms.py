@@ -3,19 +3,23 @@ import tempfile
 
 from django import forms
 from django.conf import settings
+from django.contrib import auth
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
-from ..models import User, Post, Group
+from ..models import Comment, User, Post, Group
 
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 USERNAME = 'auth'
+USERNAME_OTHER = 'other_user'
 GROUP_FIRST = {'title': 'Test group 1', 'slug': 'test_group1'}
 GROUP_SECOND = {'title': 'Test group 2', 'slug': 'test_group2'}
 INDEX_URL = reverse('posts:index')
 POST_CREATE_URL = reverse('posts:post_create')
-PROFILE_URL = reverse('posts:profile',args=(USERNAME,))
+PROFILE_URL = reverse('posts:profile', args=(USERNAME,))
+LOGIN_PAGE_URL = reverse('users:login')
+LOGIN_AND_POST_CREATE_URL = f'{LOGIN_PAGE_URL}?next={POST_CREATE_URL}'
 TEST_IMAGE_1 = (
     b'\x47\x49\x46\x38\x39\x61\x02\x00'
     b'\x01\x00\x80\x00\x00\x00\x00\x00'
@@ -40,6 +44,12 @@ class TestPostForm(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.user = User.objects.create_user(USERNAME)
+        cls.guest_client = Client()
+        cls.authorized_client = Client()
+        cls.authorized_client.force_login(user=cls.user)
+        cls.user_other = User.objects.create_user(USERNAME_OTHER)
+        cls.other = Client()
+        cls.other.force_login(cls.user_other)
         cls.group_first = Group.objects.create(**GROUP_FIRST)
         cls.group_second = Group.objects.create(**GROUP_SECOND)
         cls.post = Post.objects.create(
@@ -63,10 +73,6 @@ class TestPostForm(TestCase):
     def tearDownClass(cls):
         super().tearDownClass()
         shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
-
-    def setUp(self):
-        self.authorized_client = Client()
-        self.authorized_client.force_login(user=self.user)
 
     def test_post_create(self):
         """При отправке формы создается публикация"""
@@ -128,6 +134,26 @@ class TestPostForm(TestCase):
                     self.assertEqual(form['text'].value(), post.text)
                     self.assertEqual(form['group'].value(), post.group.pk)
 
+    def test_redirection(self):
+        """Неуполномоченные пользователи перенаправляются и не меняют данные"""
+        cases = [
+            [self.guest_client, POST_CREATE_URL, LOGIN_AND_POST_CREATE_URL],
+            [self.other, self.POST_EDIT_URL, self.POST_DETAIL_URL]
+        ]
+        form_data = {
+            'text': "Этот пост не должен попасть в базу данных",
+            'group': self.group_second.pk,
+        }
+        for client, url, redirection in cases:
+            with self.subTest(url=url, user=auth.get_user(client)):
+                posts = set(Post.objects.all())
+                self.assertRedirects(client.post(url, form_data), redirection)
+                posts = set(Post.objects.all()) - posts
+                self.assertFalse(posts)
+                self.assertFalse(
+                    Post.objects.filter(text=form_data['text']).exists()
+                )
+
 
 class TestCommentForm(TestCase):
 
@@ -135,16 +161,18 @@ class TestCommentForm(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.user = User.objects.create_user(USERNAME)
+        cls.guest_client = Client()
+        cls.authorized_client = Client()
+        cls.authorized_client.force_login(user=cls.user)
         cls.post = Post.objects.create(
             author=cls.user,
             text='Пост для комментирования'
         )
         cls.COMMENT_ADD_URL = reverse('posts:add_comment', args=(cls.post.pk,))
         cls.POST_DETAIL_URL = reverse('posts:post_detail', args=(cls.post.pk,))
-
-    def setUp(self):
-        self.authorized_client = Client()
-        self.authorized_client.force_login(user=self.user)
+        cls.LOGIN_AND_COMMENT_URL = (
+            f'{LOGIN_PAGE_URL}?next={cls.COMMENT_ADD_URL}'
+        )
 
     def test_comment_create(self):
         """При отправке формы создается комментарий"""
@@ -161,7 +189,7 @@ class TestCommentForm(TestCase):
         comment = comments.pop()
         self.assertEqual(comment.text, form_data['text'])
 
-    def test_post_form(self):
+    def test_comment_form(self):
         """На страницу передается правильная форма комментария"""
         form_fields = {
             'text': forms.fields.CharField,
@@ -170,3 +198,25 @@ class TestCommentForm(TestCase):
         for field, expected_type in form_fields.items():
             with self.subTest(field=field):
                 self.assertIsInstance(form.fields.get(field), expected_type)
+
+    def test_redirection(self):
+        """Неуполномоченные пользователи перенаправляются и не меняют данные"""
+        cases = [
+            [
+                self.guest_client,
+                self.COMMENT_ADD_URL,
+                self.LOGIN_AND_COMMENT_URL
+            ],
+        ]
+        form_data = {
+            'text': "Этот комментарий не должен попасть в базу данных",
+        }
+        for client, url, redirection in cases:
+            with self.subTest(url=url, user=auth.get_user(client)):
+                comments = set(Comment.objects.all())
+                self.assertRedirects(client.post(url, form_data), redirection)
+                comments = set(Comment.objects.all()) - comments
+                self.assertFalse(comments)
+                self.assertFalse(
+                    Comment.objects.filter(text=form_data['text']).exists()
+                )

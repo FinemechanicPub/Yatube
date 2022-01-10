@@ -19,6 +19,7 @@ POSTS_ON_FIRST_PAGE = min(POST_NUMBER, POSTS_ON_PAGE_LIMIT)
 POSTS_ON_LAST_PAGE = POST_NUMBER % POSTS_ON_PAGE_LIMIT
 USERNAME_AUTHOR = 'author'
 USERNAME_FOLLOWER = 'follower'
+USERNAME_ANOTHER = 'another'
 GROUP = {'title': 'Группа', 'slug': 'test_group', 'description': 'описание'}
 GROUP_OTHER = {'title': 'Другая тестовая группа', 'slug': 'test_group_other'}
 POST = {'text': 'Тестовый пост'}
@@ -34,6 +35,10 @@ GROUP_OTHER_URL = reverse('posts:group_list', args=(GROUP_OTHER['slug'],))
 PROFILE_URL = reverse('posts:profile', args=(USERNAME_AUTHOR,))
 PROFILE_LAST_PAGE_URL = URL_WITH_PAGE.format(url=PROFILE_URL, page=LAST_PAGE)
 POST_CREATE_URL = reverse('posts:post_create')
+AUTHOR_FOLLOW_URL = reverse('posts:profile_follow', args=(USERNAME_AUTHOR,))
+ANOTHER_UNFOLLOW_URL = reverse(
+    'posts:profile_unfollow', args=(USERNAME_ANOTHER,)
+)
 TEST_IMAGE = (
     b'\x47\x49\x46\x38\x39\x61\x02\x00'
     b'\x01\x00\x80\x00\x00\x00\x00\x00'
@@ -51,35 +56,33 @@ class TestPagination(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.author = User.objects.create_user(USERNAME_AUTHOR)
-        cls.follower = User.objects.create_user(USERNAME_FOLLOWER)
+        cls.author_user = User.objects.create_user(USERNAME_AUTHOR)
+        cls.follower_user = User.objects.create_user(USERNAME_FOLLOWER)
+        cls.author = Client()
+        cls.author.force_login(user=cls.author_user)
+        cls.follower = Client()
+        cls.follower.force_login(user=cls.follower_user)
         cls.group = Group.objects.create(**GROUP)
         Post.objects.bulk_create([
             Post(
                 text=cls.POST_WITH_GROUP.format(number=i),
-                author=cls.author,
+                author=cls.author_user,
                 group=cls.group
             ) for i in range(POST_NUMBER)
         ])
-        Follow.objects.create(user=cls.follower, author=cls.author)
-
-    def setUp(self):
-        self.author_client = Client()
-        self.author_client.force_login(user=self.author)
-        self.follower_client = Client()
-        self.follower_client.force_login(user=self.follower)
+        Follow.objects.create(user=cls.follower_user, author=cls.author_user)
 
     def test_pagination(self):
         cases = [
-            [INDEX_URL, self.author_client, POSTS_ON_FIRST_PAGE],
-            [INDEX_LAST_PAGE_URL, self.author_client, POSTS_ON_LAST_PAGE],
-            [GROUP_URL, self.author_client, POSTS_ON_FIRST_PAGE],
-            [GROUP_LAST_PAGE_URL, self.author_client, POSTS_ON_LAST_PAGE],
-            [PROFILE_URL, self.author_client, POSTS_ON_FIRST_PAGE],
-            [PROFILE_LAST_PAGE_URL, self.author_client, POSTS_ON_LAST_PAGE],
-            [FOLLOW_URL, self.author_client, 0],
-            [FOLLOW_URL, self.follower_client, POSTS_ON_FIRST_PAGE],
-            [FOLLOW_LAST_PAGE_URL, self.follower_client, POSTS_ON_LAST_PAGE]
+            [INDEX_URL, self.author, POSTS_ON_FIRST_PAGE],
+            [INDEX_LAST_PAGE_URL, self.author, POSTS_ON_LAST_PAGE],
+            [GROUP_URL, self.author, POSTS_ON_FIRST_PAGE],
+            [GROUP_LAST_PAGE_URL, self.author, POSTS_ON_LAST_PAGE],
+            [PROFILE_URL, self.author, POSTS_ON_FIRST_PAGE],
+            [PROFILE_LAST_PAGE_URL, self.author, POSTS_ON_LAST_PAGE],
+            [FOLLOW_URL, self.author, 0],
+            [FOLLOW_URL, self.follower, POSTS_ON_FIRST_PAGE],
+            [FOLLOW_LAST_PAGE_URL, self.follower, POSTS_ON_LAST_PAGE]
         ]
         for url, client, expected_count in cases:
             with self.subTest(url=url, user=auth.get_user(client)):
@@ -95,8 +98,12 @@ class TestPostData(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.author = User.objects.create_user(USERNAME_AUTHOR)
-        cls.follower = User.objects.create_user(USERNAME_FOLLOWER)
+        cls.author_user = User.objects.create_user(USERNAME_AUTHOR)
+        cls.follower_user = User.objects.create_user(USERNAME_FOLLOWER)
+        cls.author = Client()
+        cls.author.force_login(user=cls.author_user)
+        cls.follower = Client()
+        cls.follower.force_login(user=cls.follower_user)
         cls.group = Group.objects.create(**GROUP)
         cls.group_other = Group.objects.create(**GROUP_OTHER)
         cls.image = SimpleUploadedFile(
@@ -105,33 +112,27 @@ class TestPostData(TestCase):
             content_type='image/gif'
         )
         cls.post = Post.objects.create(
-            author=cls.author,
+            author=cls.author_user,
             group=cls.group,
             image=cls.image,
             **POST
         )
         cls.POST_URL = reverse('posts:post_detail', args=(cls.post.pk,))
-        Follow.objects.create(user=cls.follower, author=cls.author)
+        Follow.objects.create(user=cls.follower_user, author=cls.author_user)
 
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
         shutil.rmtree(TEMP_MEDIA_ROOT_FORMS, ignore_errors=True)
 
-    def setUp(self):
-        self.author_client = Client()
-        self.author_client.force_login(user=self.author)
-        self.follower_client = Client()
-        self.follower_client.force_login(user=self.follower)
-
     def test_post_context(self):
         """Публикация передается с правильными данными"""
         cases = [
-            [INDEX_URL, self.author_client],
-            [GROUP_URL, self.author_client],
-            [PROFILE_URL, self.author_client],
-            [FOLLOW_URL, self.follower_client],
-            [self.POST_URL, self.author_client]
+            [INDEX_URL, self.author],
+            [GROUP_URL, self.author],
+            [PROFILE_URL, self.author],
+            [FOLLOW_URL, self.follower],
+            [self.POST_URL, self.author]
         ]
         for url, client in cases:
             with self.subTest(url=url, user=auth.get_user(client)):
@@ -152,22 +153,21 @@ class TestPostData(TestCase):
                 self.assertEqual(post.group, self.post.group)
                 self.assertEqual(post.image, self.post.image)
 
-    def test_post_not_displayed_in_wrong_group(self):
-        """Публикация не появляется на странице другой группы"""
-        self.assertNotIn(
-            self.post, self.author_client.get(GROUP_OTHER_URL)
-            .context['page_obj']
-        )
-
-    def test_post_not_displayed_if_not_subscribed(self):
-        """Публикация не появляется на странице без подписки"""
-        self.assertNotIn(
-            self.post, self.author_client.get(FOLLOW_URL).context['page_obj']
-        )
+    def test_not_displayed(self):
+        """Публикация не появляется на неправильных страницах"""
+        cases = [
+            [GROUP_OTHER_URL, self.author],
+            [FOLLOW_URL, self.author]
+        ]
+        for url, client in cases:
+            with self.subTest(url=url, user=auth.get_user(client)):
+                self.assertNotIn(
+                    self.post, client.get(url).context['page_obj']
+                )
 
     def test_group_context(self):
         """Группа передается с правильными данными"""
-        group = self.author_client.get(GROUP_URL).context['group']
+        group = self.author.get(GROUP_URL).context['group']
         self.assertEqual(group.pk, self.group.pk)
         self.assertEqual(group.slug, self.group.slug)
         self.assertEqual(group.title, self.group.title)
@@ -175,8 +175,8 @@ class TestPostData(TestCase):
 
     def test_profile_context(self):
         """На страницу профиля передается правильный автор"""
-        user = self.author_client.get(PROFILE_URL).context['author']
-        self.assertEqual(user, self.author)
+        user = self.author.get(PROFILE_URL).context['author']
+        self.assertEqual(user, self.author_user)
 
 
 class TestSubscription(TestCase):
@@ -186,39 +186,40 @@ class TestSubscription(TestCase):
         super().setUpClass()
         cls.author_user = User.objects.create_user(USERNAME_AUTHOR)
         cls.follower_user = User.objects.create_user(USERNAME_FOLLOWER)
-        cls.AUTHOR_FOLLOW_URL = reverse(
-            'posts:profile_follow', args=(cls.author_user.username,)
-        )
-        cls.AUTHOR_UNFOLLOW_URL = reverse(
-            'posts:profile_unfollow', args=(cls.author_user.username,)
-        )
-
-    def setUp(self):
-        self.author_client = Client()
-        self.author_client.force_login(user=self.author_user)
-        self.follow_client = Client()
-        self.follow_client.force_login(user=self.follower_user)
+        cls.another_user = User.objects.create_user(USERNAME_ANOTHER)
+        Follow.objects.create(user=cls.follower_user, author=cls.another_user)
+        cls.author = Client()
+        cls.author.force_login(user=cls.author_user)
+        cls.follower = Client()
+        cls.follower.force_login(user=cls.follower_user)
 
     def test_follow(self):
         """Подписка на автора работает правильно"""
-        client = self.follow_client
-        user = auth.get_user(self.follow_client)
-        subscriptions = set(Follow.objects.all())
-        client.get(self.AUTHOR_FOLLOW_URL)
-        subscriptions = set(Follow.objects.all()) - subscriptions
-        self.assertEqual(
-            len(subscriptions),
-            1,
-            'Должна создаваться ровно 1 подписка'
+        self.follower.get(AUTHOR_FOLLOW_URL)
+        self.assertTrue(Follow.objects.filter(
+            user=self.follower_user, author=self.author_user).exists()
         )
-        subscription = subscriptions.pop()
-        self.assertEqual(subscription.user, user)
-        self.assertEqual(subscription.author, self.author_user)
-        client.get(self.AUTHOR_UNFOLLOW_URL)
+
+    def test_unfollow(self):
+        """Отписка от автора работает правильно"""
+        self.follower.get(ANOTHER_UNFOLLOW_URL)
         self.assertFalse(Follow.objects.filter(
-            user=user,
-            author=self.author_user).exists(),
-            'После отписки в базе данных не должно быть подписок'
+            user=self.follower_user, author=self.another_user).exists()
+        )
+
+    def test_unfollow(self):
+        """Подписка на самого себя не имеет эффекта"""
+        self.author.get(AUTHOR_FOLLOW_URL)
+        self.assertFalse(Follow.objects.filter(
+            user=self.author_user, author=self.author_user).exists()
+        )
+
+    def test_duplicated_subscription(self):
+        """Повторная подписка не изменяет состояния подписок"""
+        self.follower.get(AUTHOR_FOLLOW_URL)
+        self.follower.get(AUTHOR_FOLLOW_URL)
+        self.assertEqual(1, Follow.objects.filter(
+            user=self.follower_user, author=self.author_user).count()
         )
 
 
@@ -228,43 +229,16 @@ class TestCache(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.user = User.objects.create_user(USERNAME_AUTHOR)
+        cls.client = Client()
         cls.post = Post.objects.create(
             author=cls.user,
             **POST
         )
 
-    def setUp(self):
-        self.client = Client()
-
     def test_cache(self):
         cache.clear()
-        text = self.post.text
-        self.assertContains(
-            self.client.get(INDEX_URL),
-            text,
-            status_code=200,
-            msg_prefix=(
-                'Текст поста должен показываться'
-                'на главной странице до теста кэша'
-            )
-        )
+        content = self.client.get(INDEX_URL).content
         self.post.delete()
-        self.assertContains(
-            self.client.get(INDEX_URL),
-            text,
-            status_code=200,
-            msg_prefix=(
-                'Текст поста должен показываться'
-                'на главной странице после удаления до сброса кэша'
-            )
-        )
+        self.assertEqual(content, self.client.get(INDEX_URL).content)
         cache.clear()
-        self.assertNotContains(
-            self.client.get(INDEX_URL),
-            text,
-            status_code=200,
-            msg_prefix=(
-                'Текст поста не должен показываться'
-                'на главной странице после удаления после сброса кэша'
-            )
-        )
+        self.assertNotEqual(content, self.client.get(INDEX_URL).content)
