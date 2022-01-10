@@ -38,7 +38,7 @@ def profile(request: HttpRequest, username: str):
     })
 
 
-def post_detail(request: HttpRequest, post_id: int):
+def post_detail(request: HttpRequest, post_id):
     """Представление для одной публикации."""
     post = get_object_or_404(Post, pk=post_id)
     return render(request, 'posts/post_detail.html', {
@@ -61,7 +61,7 @@ def post_create(request: HttpRequest):
 
 
 @login_required
-def post_edit(request: HttpRequest, post_id: int):
+def post_edit(request: HttpRequest, post_id):
     """Представление для редактирования существующей записи."""
     post = get_object_or_404(Post, pk=post_id)
     if post.author != request.user:
@@ -81,7 +81,7 @@ def post_edit(request: HttpRequest, post_id: int):
 
 
 @login_required
-def add_comment(request: HttpRequest, post_id: int):
+def add_comment(request: HttpRequest, post_id):
     post = get_object_or_404(Post, pk=post_id)
     form = CommentForm(request.POST)
     if form.is_valid():
