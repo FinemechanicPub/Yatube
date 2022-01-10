@@ -23,9 +23,7 @@
         {% endif %}
         <li class="list-group-item">
           Автор:
-          <a href="{% url 'posts:profile' post.author.username %}">
-            {{ post.author.get_full_name|default:user.username }}
-          </a> 
+          {% include 'posts/includes/user_name.html' with author=post.author%}
         </li>
         <li class="
           list-group-item d-flex justify-content-between align-items-center">
