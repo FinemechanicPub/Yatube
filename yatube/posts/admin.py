@@ -1,10 +1,20 @@
 from django.contrib import admin
+from django.contrib.auth import get_user_model
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
-from .models import Group, Post, Comment
+from .models import Group, Post, Comment, Follow
+
+User = get_user_model()
 
 
 class CommentInline(admin.StackedInline):
     model = Comment
+    extra = 0
+
+
+class FollowInline(admin.StackedInline):
+    model = Follow
+    fk_name = 'user'
     extra = 0
 
 
@@ -30,5 +40,11 @@ class GroupAdmin(admin.ModelAdmin):
     prepopulated_fields = {"slug": ("title",)}
 
 
+class UserAdmin(BaseUserAdmin):
+    inlines = [FollowInline]
+
+
+admin.site.unregister(User)
+admin.site.register(User, UserAdmin)
 admin.site.register(Post, PostAdmin)
 admin.site.register(Group, GroupAdmin)
