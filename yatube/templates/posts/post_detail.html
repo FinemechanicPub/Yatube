@@ -40,7 +40,7 @@
       <p>
         {{ post.text|linebreaksbr }}
       </p>
-      {% if request.user == post.author %}
+      {% if user == post.author %}
         <!-- эта кнопка видна только автору -->
         <p>
           <a class="btn btn-primary" 

@@ -16,7 +16,7 @@
         </a>
       </li>
     </ul>
-    {% if request.user == post.author %}
+    {% if user == post.author %}
       <!-- эта кнопка видна только автору -->
       <div>
         <a class="btn btn-primary"

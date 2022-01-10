@@ -9,7 +9,7 @@
   <h1>Последние обновления на сайте</h1>
   {% include 'posts/includes/switcher.html' %}
   {% get_current_language as LANG %}
-  {% cache 20 index_page page_obj.number request.user.is_authenticated LANG%}
+  {% cache 20 index_page page_obj.number user.is_authenticated LANG%}
     {% include 'includes/paginator.html' %}
     
     {% for post in page_obj %}
