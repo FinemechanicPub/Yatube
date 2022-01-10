@@ -31,8 +31,8 @@ def profile(request: HttpRequest, username: str):
     return render(request, 'posts/profile.html', {
         'author': author,
         'following': (
-            user.is_authenticated
-            and user.follower.filter(author=author).exists()
+            user.is_authenticated and user != author
+            and Follow.objects.filter(user=user, author=author).exists()
         ),
         'page_obj': get_posts_page(request, author.posts.all())
     })
