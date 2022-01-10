@@ -16,19 +16,13 @@
   {% if user.is_authenticated and user != author %}
     <div class="my-2">
       {% if following %}
-        <a
-          class="btn btn-light" role="button"
-          href="{% url 'posts:profile_unfollow' author.username %}" 
-        >
-          Отписаться
-        </a>
+        <a class="btn btn-light"
+          href="{% url 'posts:profile_unfollow' author.username %}"
+          role="button">Отписаться</a>
       {% else %}
-        <a
-          class="btn btn-primary" role="button"
-          href="{% url 'posts:profile_follow' author.username %}" 
-        >
-          Подписаться
-        </a>
+        <a class="btn btn-primary"
+          href="{% url 'posts:profile_follow' author.username %}"
+          role="button">Подписаться</a>
       {% endif %}
     </div>
   {% endif %}
