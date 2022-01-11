@@ -30,5 +30,23 @@ class GroupAdmin(admin.ModelAdmin):
     prepopulated_fields = {"slug": ("title",)}
 
 
+class CommentAdmin(admin.ModelAdmin):
+    """Настройки панели администрирования для комментариев"""
+
+    list_display = ('text', 'author', 'post')
+    list_editable = ('author',)
+    search_fields = ('text', 'author__username')
+
+
+class FollowAdmin(admin.ModelAdmin):
+    """Настройки панели администрирования для подписок"""
+
+    list_display = ('__str__', 'user', 'author')
+    list_editable = ('user', 'author')
+    search_fields = ('user__username', 'author__username')
+
+
 admin.site.register(Post, PostAdmin)
 admin.site.register(Group, GroupAdmin)
+admin.site.register(Follow, FollowAdmin)
+admin.site.register(Comment, CommentAdmin)
