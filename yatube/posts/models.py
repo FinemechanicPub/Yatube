@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Q, F
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -108,6 +109,10 @@ class Follow(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=['user', 'author'], name='unique_subscription'
+            ),
+            models.CheckConstraint(
+                check=~Q(user=F('author')),
+                name='no_self_subscriptions'
             )
         ]
 
