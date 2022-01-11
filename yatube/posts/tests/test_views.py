@@ -36,6 +36,7 @@ PROFILE_URL = reverse('posts:profile', args=(USERNAME_AUTHOR,))
 PROFILE_LAST_PAGE_URL = URL_WITH_PAGE.format(url=PROFILE_URL, page=LAST_PAGE)
 POST_CREATE_URL = reverse('posts:post_create')
 AUTHOR_FOLLOW_URL = reverse('posts:profile_follow', args=(USERNAME_AUTHOR,))
+ANOTHER_FOLLOW_URL = reverse('posts:profile_follow', args=(USERNAME_ANOTHER,))
 ANOTHER_UNFOLLOW_URL = reverse(
     'posts:profile_unfollow', args=(USERNAME_ANOTHER,)
 )
@@ -178,6 +179,15 @@ class TestPostData(TestCase):
         user = self.author.get(PROFILE_URL).context['author']
         self.assertEqual(user, self.author_user)
 
+    def test_cache(self):
+        """Кэш главной страницы работает правильно"""
+        cache.clear()
+        content = self.client.get(INDEX_URL).content
+        Post.objects.all().delete()
+        self.assertEqual(content, self.client.get(INDEX_URL).content)
+        cache.clear()
+        self.assertNotEqual(content, self.client.get(INDEX_URL).content)
+
 
 class TestSubscription(TestCase):
 
@@ -216,29 +226,7 @@ class TestSubscription(TestCase):
 
     def test_duplicated_subscription(self):
         """Повторная подписка не изменяет состояния подписок"""
-        self.follower.get(AUTHOR_FOLLOW_URL)
-        self.follower.get(AUTHOR_FOLLOW_URL)
+        self.follower.get(ANOTHER_FOLLOW_URL)
         self.assertEqual(1, Follow.objects.filter(
-            user=self.follower_user, author=self.author_user).count()
+            user=self.follower_user, author=self.another_user).count()
         )
-
-
-class TestCache(TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.user = User.objects.create_user(USERNAME_AUTHOR)
-        cls.client = Client()
-        cls.post = Post.objects.create(
-            author=cls.user,
-            **POST
-        )
-
-    def test_cache(self):
-        cache.clear()
-        content = self.client.get(INDEX_URL).content
-        self.post.delete()
-        self.assertEqual(content, self.client.get(INDEX_URL).content)
-        cache.clear()
-        self.assertNotEqual(content, self.client.get(INDEX_URL).content)

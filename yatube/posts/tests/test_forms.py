@@ -1,5 +1,6 @@
 import shutil
 import tempfile
+from copy import copy
 
 from django import forms
 from django.conf import settings
@@ -43,17 +44,17 @@ class TestPostForm(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.user = User.objects.create_user(USERNAME)
+        cls.author_user = User.objects.create_user(USERNAME)
         cls.guest = Client()
-        cls.authorized = Client()
-        cls.authorized.force_login(user=cls.user)
-        cls.user_other = User.objects.create_user(USERNAME_OTHER)
+        cls.author = Client()
+        cls.author.force_login(user=cls.author_user)
+        cls.other_user = User.objects.create_user(USERNAME_OTHER)
         cls.other = Client()
-        cls.other.force_login(cls.user_other)
+        cls.other.force_login(cls.other_user)
         cls.group_first = Group.objects.create(**GROUP_FIRST)
         cls.group_second = Group.objects.create(**GROUP_SECOND)
         cls.post = Post.objects.create(
-            author=cls.user,
+            author=cls.author_user,
             group=cls.group_first,
             text='Пост для редактирования',
             image=SimpleUploadedFile(
@@ -62,11 +63,10 @@ class TestPostForm(TestCase):
                 content_type='image/gif'
             )
         )
-        cls.POST_EDIT_URL = reverse(
-            'posts:post_edit', kwargs={'post_id': cls.post.pk}
-        )
-        cls.POST_DETAIL_URL = reverse(
-            'posts:post_detail', kwargs={'post_id': cls.post.pk}
+        cls.POST_EDIT_URL = reverse('posts:post_edit', args=(cls.post.pk,))
+        cls.POST_DETAIL_URL = reverse('posts:post_detail', args=(cls.post.pk,))
+        cls.LOGIN_AND_POST_EDIT_URL = (
+            f'{LOGIN_PAGE_URL}?next={cls.POST_EDIT_URL}'
         )
 
     @classmethod
@@ -78,12 +78,12 @@ class TestPostForm(TestCase):
         """При отправке формы создается публикация"""
         posts = set(Post.objects.all())
         form_data = {
-            'text': "Новый пост",
+            'text': 'Новый пост',
             'group': self.group_first.pk,
             'image':
             SimpleUploadedFile('image2.gif', TEST_IMAGE_2, 'image/gif')
         }
-        response = self.authorized.post(POST_CREATE_URL, form_data)
+        response = self.author.post(POST_CREATE_URL, form_data)
         self.assertRedirects(response, PROFILE_URL)
         posts = set(Post.objects.all()) - posts
         self.assertEqual(len(posts), 1, 'Должен добавляться ровно 1 пост')
@@ -103,7 +103,7 @@ class TestPostForm(TestCase):
             'image':
             SimpleUploadedFile('image2.gif', TEST_IMAGE_2, 'image/gif')
         }
-        response = self.authorized.post(self.POST_EDIT_URL, form_data)
+        response = self.author.post(self.POST_EDIT_URL, form_data)
         self.assertRedirects(response, self.POST_DETAIL_URL)
         post = Post.objects.get(pk=self.post.pk)
         self.assertEqual(post.author, post_author)
@@ -125,7 +125,7 @@ class TestPostForm(TestCase):
         }
         for url, post in cases:
             with self.subTest(url=url):
-                form = self.authorized.get(url).context['form']
+                form = self.author.get(url).context['form']
                 for field, expected_type in form_fields.items():
                     self.assertIsInstance(
                         form.fields.get(field), expected_type
@@ -134,25 +134,36 @@ class TestPostForm(TestCase):
                     self.assertEqual(form['text'].value(), post.text)
                     self.assertEqual(form['group'].value(), post.group.pk)
 
+    def test_unauthorized_create_post(self):
+        posts = set(Post.objects.all())
+        form_data = {
+            'text': "Новый пост"
+        }
+        self.assertRedirects(
+            self.guest.post(POST_CREATE_URL, form_data),
+            LOGIN_AND_POST_CREATE_URL
+        )
+        self.assertEqual(set(Post.objects.all()), posts)
+
     def test_redirection(self):
         """Неуполномоченные пользователи перенаправляются и не меняют данные"""
+        original_post = copy(self.post)
         cases = [
-            [self.guest, POST_CREATE_URL, LOGIN_AND_POST_CREATE_URL],
-            [self.other, self.POST_EDIT_URL, self.POST_DETAIL_URL]
+            [self.guest, self.POST_EDIT_URL, self.LOGIN_AND_POST_EDIT_URL],
+            [self.other, self.POST_EDIT_URL, self.POST_DETAIL_URL],
+            [self.author, self.POST_EDIT_URL, self.POST_DETAIL_URL]
         ]
         form_data = {
             'text': "Этот пост не должен попасть в базу данных",
             'group': self.group_second.pk,
         }
         for client, url, redirection in cases:
-            with self.subTest(url=url, user=auth.get_user(client)):
-                posts = set(Post.objects.all())
+            with self.subTest(url=url):
                 self.assertRedirects(client.post(url, form_data), redirection)
-                posts = set(Post.objects.all()) - posts
-                self.assertFalse(posts)
-                self.assertFalse(
-                    Post.objects.filter(text=form_data['text']).exists()
-                )
+                post = Post.objects.get(pk=original_post.pk)
+                self.assertEqual(post.text, original_post.text)
+                self.assertEqual(post.group, original_post.group)
+                self.assertEqual(post.image, original_post.image)
 
 
 class TestCommentForm(TestCase):
