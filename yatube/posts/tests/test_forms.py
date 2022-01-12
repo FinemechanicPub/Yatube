@@ -6,6 +6,7 @@ from django import forms
 from django.conf import settings
 from django.contrib import auth
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.http.response import HttpResponse
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
@@ -147,23 +148,31 @@ class TestPostForm(TestCase):
 
     def test_redirection(self):
         """Неуполномоченные пользователи перенаправляются и не меняют данные"""
-        original_post = copy(self.post)
+        pk = self.post.pk
+        text = self.post.text
+        group = self.post.group
+        author = self.post.author
+        image = self.post.image
         cases = [
             [self.guest, self.POST_EDIT_URL, self.LOGIN_AND_POST_EDIT_URL],
             [self.other, self.POST_EDIT_URL, self.POST_DETAIL_URL],
-            [self.author, self.POST_EDIT_URL, self.POST_DETAIL_URL]
+            #[self.author, self.POST_EDIT_URL, self.POST_DETAIL_URL]
         ]
         form_data = {
             'text': "Этот пост не должен попасть в базу данных",
             'group': self.group_second.pk,
+            'image':
+            SimpleUploadedFile('image1.gif', TEST_IMAGE_2, 'image/gif')
         }
         for client, url, redirection in cases:
             with self.subTest(url=url):
+                form_data['image'].seek(0)
                 self.assertRedirects(client.post(url, form_data), redirection)
-                post = Post.objects.get(pk=original_post.pk)
-                self.assertEqual(post.text, original_post.text)
-                self.assertEqual(post.group, original_post.group)
-                self.assertEqual(post.image, original_post.image)
+                post = Post.objects.get(pk=pk)                              
+                self.assertEqual(post.author, author)
+                self.assertEqual(post.text, text)
+                self.assertEqual(post.group, group)
+                self.assertEqual(post.image, image)
 
 
 class TestCommentForm(TestCase):
