@@ -1,12 +1,10 @@
 import shutil
 import tempfile
-from copy import copy
 
 from django import forms
 from django.conf import settings
 from django.contrib import auth
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.http.response import HttpResponse
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
@@ -136,6 +134,7 @@ class TestPostForm(TestCase):
                     self.assertEqual(form['group'].value(), post.group.pk)
 
     def test_unauthorized_create_post(self):
+        """Неавторизованные пользователи не могут создать публикацию"""
         posts = set(Post.objects.all())
         form_data = {
             'text': "Новый пост"
@@ -144,7 +143,7 @@ class TestPostForm(TestCase):
             self.guest.post(POST_CREATE_URL, form_data),
             LOGIN_AND_POST_CREATE_URL
         )
-        self.assertEqual(set(Post.objects.all()), posts)
+        self.assertCountEqual(set(Post.objects.all()), posts)
 
     def test_redirection(self):
         """Неуполномоченные пользователи перенаправляются и не меняют данные"""
@@ -153,22 +152,23 @@ class TestPostForm(TestCase):
         group = self.post.group
         author = self.post.author
         image = self.post.image
+        count = Post.objects.all().count()
         cases = [
             [self.guest, self.POST_EDIT_URL, self.LOGIN_AND_POST_EDIT_URL],
             [self.other, self.POST_EDIT_URL, self.POST_DETAIL_URL],
-            #[self.author, self.POST_EDIT_URL, self.POST_DETAIL_URL]
         ]
         form_data = {
             'text': "Этот пост не должен попасть в базу данных",
             'group': self.group_second.pk,
             'image':
-            SimpleUploadedFile('image1.gif', TEST_IMAGE_2, 'image/gif')
+            SimpleUploadedFile('image2.gif', TEST_IMAGE_2, 'image/gif')
         }
         for client, url, redirection in cases:
-            with self.subTest(url=url):
+            with self.subTest(url=url, user=auth.get_user(client).username):
                 form_data['image'].seek(0)
                 self.assertRedirects(client.post(url, form_data), redirection)
-                post = Post.objects.get(pk=pk)                              
+                self.assertEqual(Post.objects.all().count(), count)
+                post = Post.objects.get(pk=pk)
                 self.assertEqual(post.author, author)
                 self.assertEqual(post.text, text)
                 self.assertEqual(post.group, group)
@@ -220,7 +220,7 @@ class TestCommentForm(TestCase):
                 self.assertIsInstance(form.fields.get(field), expected_type)
 
     def test_redirection(self):
-        """Неуполномоченные пользователи перенаправляются и не меняют данные"""
+        """Неавторизованный пользователь не может создать комментарий"""
         cases = [
             [
                 self.guest,
@@ -231,12 +231,8 @@ class TestCommentForm(TestCase):
         form_data = {
             'text': "Этот комментарий не должен попасть в базу данных",
         }
+        comments = set(Comment.objects.all())
         for client, url, redirection in cases:
-            with self.subTest(url=url, user=auth.get_user(client)):
-                comments = set(Comment.objects.all())
+            with self.subTest(url=url, user=auth.get_user(client).username):
                 self.assertRedirects(client.post(url, form_data), redirection)
-                comments = set(Comment.objects.all()) - comments
-                self.assertFalse(comments)
-                self.assertFalse(
-                    Comment.objects.filter(text=form_data['text']).exists()
-                )
+                self.assertCountEqual(set(Comment.objects.all()), comments)

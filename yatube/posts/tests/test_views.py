@@ -181,6 +181,7 @@ class TestPostData(TestCase):
 
     def test_cache(self):
         """Кэш главной страницы работает правильно"""
+        self.assertTrue(Post.objects.all().count())
         cache.clear()
         content = self.client.get(INDEX_URL).content
         Post.objects.all().delete()
@@ -227,6 +228,10 @@ class TestSubscription(TestCase):
     def test_duplicated_subscription(self):
         """Повторная подписка не изменяет состояния подписок"""
         self.follower.get(ANOTHER_FOLLOW_URL)
-        self.assertEqual(1, Follow.objects.filter(
-            user=self.follower_user, author=self.another_user).count()
+        self.assertEqual(
+            Follow.objects.filter(
+                user=self.follower_user,
+                author=self.another_user
+            ).count(),
+            1
         )

@@ -84,7 +84,9 @@ class URLTests(TestCase):
             [self.SUBSCRIBE_URL, self.guest, FOUND],
             [self.SUBSCRIBE_URL, self.another, FOUND],
             [self.UNSUBSCRIBE_URL, self.guest, FOUND],
-            [self.UNSUBSCRIBE_URL, self.another, FOUND]
+            [self.UNSUBSCRIBE_URL, self.another, FOUND],
+            [self.SUBSCRIBE_URL, self.author, FOUND],
+            [self.UNSUBSCRIBE_URL, self.author, NOT_FOUND]
         ]
         for url, client, expected in cases:
             with self.subTest(url=url, user=auth.get_user(client).username):
@@ -102,7 +104,10 @@ class URLTests(TestCase):
             [self.POST_EDIT_URL, self.another, self.POST_URL],
             [FOLLOW_URL, self.guest, LOGIN_AND_FOLLOW_URL],
             [self.SUBSCRIBE_URL, self.guest, self.LOGIN_AND_SUBSCRIBE],
-            [self.UNSUBSCRIBE_URL, self.guest, self.LOGIN_AND_UNSUBSCRIBE]
+            [self.SUBSCRIBE_URL, self.another, PROFILE_URL],
+            [self.UNSUBSCRIBE_URL, self.guest, self.LOGIN_AND_UNSUBSCRIBE],
+            [self.UNSUBSCRIBE_URL, self.another, PROFILE_URL],
+            [self.SUBSCRIBE_URL, self.author, PROFILE_URL],
         ]
         for url, client, redirection in cases:
             with self.subTest(url=url, user=auth.get_user(client).username):
