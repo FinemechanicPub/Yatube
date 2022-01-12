@@ -36,8 +36,8 @@
   </div>
   {% if not hide_group_link and post.group %}
     <div class="card-footer">
-      #<a href="{% url 'posts:group_list' post.group.slug %}">{{ post.group }}
-        </a> 
+      <a href="{% url 'posts:group_list' post.group.slug %}">#{{ post.group }}
+      </a> 
     </div>
   {% endif %}
 </article>
