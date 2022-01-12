@@ -1,6 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 
 from .forms import PostForm, CommentForm
 from .models import Group, Post, Follow, User
@@ -104,7 +105,10 @@ def profile_follow(request: HttpRequest, username: str):
     author = get_object_or_404(User, username=username)
     if request.user != author:
         Follow.objects.get_or_create(user=request.user, author=author)
-    return redirect(request.META.get('HTTP_REFERER', 'posts:follow_index'))
+    return redirect(request.META.get(
+        'HTTP_REFERER',
+        reverse('posts:profile', args=(username,))
+    ))
 
 
 @login_required
@@ -113,4 +117,7 @@ def profile_unfollow(request: HttpRequest, username: str):
         Follow, user=request.user,
         author__username=username
     ).delete()
-    return redirect(request.META.get('HTTP_REFERER', 'posts:follow_index'))
+    return redirect(request.META.get(
+        'HTTP_REFERER',
+        reverse('posts:profile', args=(username,))
+    ))
