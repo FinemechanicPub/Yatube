@@ -143,19 +143,14 @@ class TestPostForm(TestCase):
             self.guest.post(POST_CREATE_URL, form_data),
             LOGIN_AND_POST_CREATE_URL
         )
-        self.assertCountEqual(set(Post.objects.all()), posts)
+        self.assertEqual(set(Post.objects.all()), posts)
 
     def test_redirection(self):
         """Неуполномоченные пользователи перенаправляются и не меняют данные"""
-        pk = self.post.pk
-        text = self.post.text
-        group = self.post.group
-        author = self.post.author
-        image = self.post.image
         count = Post.objects.all().count()
         cases = [
-            [self.guest, self.POST_EDIT_URL, self.LOGIN_AND_POST_EDIT_URL],
-            [self.other, self.POST_EDIT_URL, self.POST_DETAIL_URL],
+            [self.guest, self.LOGIN_AND_POST_EDIT_URL],
+            [self.other, self.POST_DETAIL_URL],
         ]
         form_data = {
             'text': "Этот пост не должен попасть в базу данных",
@@ -163,16 +158,18 @@ class TestPostForm(TestCase):
             'image':
             SimpleUploadedFile('image2.gif', TEST_IMAGE_2, 'image/gif')
         }
-        for client, url, redirection in cases:
-            with self.subTest(url=url, user=auth.get_user(client).username):
+        for client, redirection in cases:
+            with self.subTest(ser=auth.get_user(client).username):
                 form_data['image'].seek(0)
-                self.assertRedirects(client.post(url, form_data), redirection)
+                self.assertRedirects(
+                    client.post(self.POST_EDIT_URL, form_data), redirection
+                )
                 self.assertEqual(Post.objects.all().count(), count)
-                post = Post.objects.get(pk=pk)
-                self.assertEqual(post.author, author)
-                self.assertEqual(post.text, text)
-                self.assertEqual(post.group, group)
-                self.assertEqual(post.image, image)
+                post = Post.objects.get(pk=self.post.pk)
+                self.assertEqual(post.author, self.post.author)
+                self.assertEqual(post.text, self.post.text)
+                self.assertEqual(post.group, self.post.group)
+                self.assertEqual(post.image, self.post.image)
 
 
 class TestCommentForm(TestCase):
@@ -235,4 +232,4 @@ class TestCommentForm(TestCase):
         for client, url, redirection in cases:
             with self.subTest(url=url, user=auth.get_user(client).username):
                 self.assertRedirects(client.post(url, form_data), redirection)
-                self.assertCountEqual(set(Comment.objects.all()), comments)
+                self.assertEqual(set(Comment.objects.all()), comments)
