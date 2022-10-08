@@ -1,12 +1,8 @@
-# hw05_final
-
-[![CI](https://github.com/yandex-praktikum/hw05_final/actions/workflows/python-app.yml/badge.svg?branch=master)](https://github.com/yandex-praktikum/hw05_final/actions/workflows/python-app.yml)
-
 # Yatube
 
 Yatube социальная сеть для тех, кого забанили в других местах.
 
-## Installation
+## Установка
 
 Загрузите репозиторий. Используйте [pip](https://pip.pypa.io/en/stable/)
 для установки зависимостей.
@@ -28,6 +24,16 @@ python3 manage.py migrate
 ```bash
 python3 manage.py runserver
 ```
+
+## Используемые технологии
+
+Приложение работает на
+- [Django 2.2](https://www.djangoproject.com/download/)
+
+## Разработчики
+
+Проект разработан 
+- [Александр Рубцов](https://github.com/FinemechanicPub)
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
