@@ -17,7 +17,7 @@ pip install -r requirements.txt
 python3 manage.py migrate
 ```
 
-## Usage
+## Использование
 
 Проверка установки
 
@@ -25,7 +25,7 @@ python3 manage.py migrate
 python3 manage.py runserver
 ```
 
-## Используемые технологии
+## Технологии
 
 Приложение работает на
 - [Django 2.2](https://www.djangoproject.com/download/)
