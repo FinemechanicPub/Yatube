@@ -34,6 +34,3 @@ python3 manage.py runserver
 
 Проект разработан 
 - [Александр Рубцов](https://github.com/FinemechanicPub)
-
-## License
-[MIT](https://choosealicense.com/licenses/mit/)
