@@ -29,6 +29,7 @@ python3 manage.py runserver
 
 Приложение работает на
 - [Django 2.2](https://www.djangoproject.com/download/)
+- [Bootstrap 5.1](https://getbootstrap.com/docs/5.1/getting-started/introduction/)
 
 ## Разработчики
 
